@@ -1,0 +1,39 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "127.0.0.1:8504:8504"  
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=wireguard
+      # WireGuard configuration from your ProtonVPN config
+      - VPN_ENDPOINT_IP=
+      - VPN_ENDPOINT_PORT=
+      - WIREGUARD_PRIVATE_KEY=
+      - WIREGUARD_PUBLIC_KEY=
+      - WIREGUARD_ADDRESSES=10.2.0.2/32
+      # DNS configuration
+      - DOT=off
+      - DNS_KEEP_NAMESERVER=on
+      - DNS_ADDRESS=1.1.1.1
+      # Bypass VPN for Telegram IPv4 ranges
+      - FIREWALL_OUTBOUND_SUBNETS=91.105.192.0/23,91.108.4.0/22,91.108.8.0/22,91.108.12.0/22,91.108.16.0/22,91.108.20.0/22,91.108.56.0/22,91.108.58.0/23,95.161.64.0/20,149.154.160.0/20,149.154.164.0/22,149.154.168.0/22,149.154.172.0/22,185.76.151.0/24,159.41.181.46/32,159.41.181.56/32,159.41.181.78/32
+      # Enable port forwarding (NAT-PMP from your config)
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=
+    restart: unless-stopped
+    volumes:
+      - ./gluetun:/gluetun
+
+  app:
+    build: .
+    command: bash start.sh
+    restart: unless-stopped
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
